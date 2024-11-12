@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/0xAFz/storm/protobuf/status/v1;statusv1";
+
+package status.v1;
+
+service Status {
+  rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusResponse) {}
+}
+
+message UpdateStatusRequest {
+  int64 user_id = 1;
+  bool status   = 2;
+}
+
+message UpdateStatusResponse {
+  string message = 1;
+}
