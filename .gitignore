@@ -23,6 +23,22 @@ go.work.sum
 
 # env file
 .env
+.env.prod
 
 # protobuf
 *.pb.*
+
+# ansible
+inventory.yml
+
+# python venv
+.venv
+venv
+
+# terraform
+.terraform
+.terraform.*
+.terraform*
+terraform.*
+*.tfstete
+*.tfstete.*
