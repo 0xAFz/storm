@@ -1,0 +1,14 @@
+---
+- import_playbook: controller.yml
+
+- name: Wait for controller to be ready
+  hosts: controller
+  tasks:
+    - name: Ensure k3s is installed
+      shell: "sudo k3s kubectl get nodes"
+      register: controller_check
+      until: controller_check.stdout | regex_search('Ready')
+      retries: 5
+      delay: 10
+
+- import_playbook: worker.yml

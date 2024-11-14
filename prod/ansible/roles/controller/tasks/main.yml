@@ -1,0 +1,15 @@
+---
+- name: Install k3s
+  shell: curl -sfL https://get.k3s.io | sh -
+
+- name: Get k3s token
+  command: cat /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+
+- name: Store token for node workers
+  copy:
+    content: "{{ k3s_token.stdout }}"
+    dest: "/tmp/k3s_token.txt"
+
+- name: Install helm
+  shell: curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash

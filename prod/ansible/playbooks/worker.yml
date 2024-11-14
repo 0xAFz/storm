@@ -1,0 +1,10 @@
+---
+- hosts: worker
+  name: worker
+  become: yes
+  gather_facts: yes
+  roles: 
+    - role: ../roles/worker
+      tags: worker
+    - role: ../roles/packages
+      tags: packages
