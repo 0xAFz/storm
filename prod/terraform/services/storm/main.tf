@@ -122,6 +122,9 @@ resource "kubernetes_service" "storm_service" {
   metadata {
     name      = "storm-service"
     namespace = kubernetes_namespace.storm.metadata[0].name
+    annotations = {
+      "traefik.backend.grpc" = "true"
+    }
   }
   spec {
     selector = {
@@ -130,6 +133,7 @@ resource "kubernetes_service" "storm_service" {
       "app.kubernetes.io/env"     = "prod"
     }
     port {
+      name        = "grpc"
       protocol    = "TCP"
       port        = 8088
       target_port = 50051
@@ -155,6 +159,29 @@ resource "kubernetes_manifest" "storm_https_redirect" {
   }
 }
 
+resource "kubernetes_manifest" "storm_certificate" {
+  manifest = {
+    "apiVersion" = "cert-manager.io/v1"
+    "kind"       = "Certificate"
+    "metadata" = {
+      "name"      = "storm-cert"
+      "namespace" = kubernetes_namespace.storm.metadata[0].name
+    }
+    "spec" = {
+      "secretName"  = "storm-tls"
+      "duration"    = "2160h0m0s" # 90 days
+      "renewBefore" = "360h0m0s"  # 15 days
+      "commonName"  = "storm.zirakcloud.ir"
+      "dnsNames"    = ["storm.zirakcloud.ir"]
+      "issuerRef" = {
+        "name"  = "le-staging"
+        "kind"  = "ClusterIssuer"
+        "group" = "cert-manager.io"
+      }
+    }
+  }
+}
+
 resource "kubernetes_manifest" "storm_ingressroute" {
   manifest = {
     "apiVersion" = "traefik.containo.us/v1alpha1"
@@ -162,6 +189,10 @@ resource "kubernetes_manifest" "storm_ingressroute" {
     "metadata" = {
       "name"      = "storm-ingress"
       "namespace" = kubernetes_namespace.storm.metadata[0].name
+      "annotations" = {
+        "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
+        "traefik.ingress.kubernetes.io/router.tls"         = "true"
+      }
     }
     "spec" = {
       "entryPoints" = ["websecure"]
@@ -180,14 +211,14 @@ resource "kubernetes_manifest" "storm_ingressroute" {
           ]
           "middlewares" = [
             {
-              "name" = "storm-https-redirect"
+              "name"      = "storm-https-redirect"
+              "namespace" = kubernetes_namespace.storm.metadata[0].name
             }
           ]
         }
       ]
       "tls" = {
-        "certResolver" = "le-staging"
-        "secretName"   = "storm-tls"
+        "secretName" = "storm-tls"
       }
     }
   }
