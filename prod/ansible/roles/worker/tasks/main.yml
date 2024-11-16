@@ -7,4 +7,4 @@
   delegate_to: controller1
 
 - name: Install k3s on worker node
-  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['controller1'].ansible_host }}:6443 K3S_TOKEN={{ lookup('file', '/tmp/k3s_token.txt') }} K3S_NODE_ROLE=worker sh -"
+  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['controller1'].ansible_host }}:6443 K3S_TOKEN={{ lookup('file', '/tmp/k3s_token.txt') }} sh -"
