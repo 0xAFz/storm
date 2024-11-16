@@ -4,7 +4,7 @@
   become: yes
   gather_facts: yes
   roles: 
-    - role: ../roles/worker
-      tags: worker
     - role: ../roles/packages
       tags: packages
+    - role: ../roles/worker
+      tags: worker
