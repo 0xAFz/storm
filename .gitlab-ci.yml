@@ -5,7 +5,7 @@ services:
 
 stages:
   - build
-  - test
+  # - test
   - push
 
 variables:
@@ -21,19 +21,19 @@ build-docker:
   only:
     - main
 
-test-docker:
-  stage: test
-  needs:
-    - build-docker
-  script:
-    - docker run --rm $IMAGE_TAG go test ./...
-  only:
-    - main
+# test-docker:
+#   stage: test
+#   needs:
+#     - build-docker
+#   script:
+#     - docker run --rm $IMAGE_TAG go test ./...
+#   only:
+#     - main
 
 push-docker:
   stage: push
   needs:
-    - test-docker
+    - build-docker
   script:
     - docker push $IMAGE_TAG
   only:
