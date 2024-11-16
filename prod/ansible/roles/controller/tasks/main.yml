@@ -13,3 +13,20 @@
 
 - name: Install helm
   shell: curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+- name: Get kubeconfig file from controller
+  fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: ~/kube/storm/k3s.yaml
+    flat: yes
+
+- name: Update kubeconfig server address on local machine
+  local_action:
+    module: lineinfile
+    regexp: '^[ ]{4}server:.*'
+    path: ~/kube/storm/k3s.yaml
+    line: '    server: https://{{ hostvars["controller1"].ansible_host }}:6443'
+    state: present
+    mode: 0640
+    create: false
+  become: false
