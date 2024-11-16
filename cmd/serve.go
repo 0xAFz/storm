@@ -14,6 +14,7 @@ import (
 	statusv1 "github.com/0xAFz/storm/protobuf/status/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func Serve() {
@@ -33,6 +34,8 @@ func Serve() {
 
 	server := grpc.NewServer()
 	statusv1.RegisterStatusServer(server, grpcStatusServer)
+
+	reflection.Register(server)
 
 	listen, err := net.Listen("tcp", config.AppConfig.GrpcServerAddr)
 	if err != nil {
