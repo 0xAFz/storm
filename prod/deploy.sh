@@ -18,10 +18,10 @@ check_ping() {
     ansible all -i ansible/inventory/hosts.yml -m ping --timeout 1
 }
 
-run_up() {
-    terraform -chdir=terraform init && \
-    terraform -chdir=terraform plan && \
-    terraform -chdir=terraform apply -auto-approve
+cluster_up() {
+    terraform -chdir=terraform/cluster init && \
+    terraform -chdir=terraform/cluster plan && \
+    terraform -chdir=terraform/cluster apply -auto-approve
 
     python3 ansible/inventory/dynamic.py
 
@@ -38,17 +38,17 @@ run_up() {
     ansible-playbook -i ansible/inventory/hosts.yml ansible/playbooks/cluster.yml
 }
 
-run_down() {
-    terraform -chdir=terraform destroy -auto-approve
+cluster_down() {
+    terraform -chdir=terraform/cluster destroy -auto-approve
 }
 
 case "$1" in
     up)
         activate_venv
-        run_up
+        cluster_up
         ;;
     down)
-        run_down
+        cluster_down
         ;;
     *)
         echo "Action not found. Use 'up' or 'down'."
