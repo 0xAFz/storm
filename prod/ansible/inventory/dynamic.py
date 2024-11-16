@@ -3,7 +3,7 @@ import json
 import yaml
 import subprocess
 
-terraform_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'terraform')
+terraform_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'terraform', 'cluster')
 
 terraform_output = subprocess.check_output(
     ["terraform", "output", "-json", "instance_public_ips"],
