@@ -35,6 +35,10 @@ push-docker:
   needs:
     - build-docker
   script:
+    - echo $CI_REGISTRY_IMAGE
+    - echo $CI_COMMIT_SHA
+    - echo $IMAGE_TAG
+    - docker images
     - docker push $IMAGE_TAG
   only:
     - main
