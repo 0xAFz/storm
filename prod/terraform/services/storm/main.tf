@@ -25,9 +25,30 @@ resource "kubernetes_config_map" "storm_config" {
   }
 
   data = {
-    GRPC_SERVER_ADDR  = ":50051"
-    KAFKA_BROKER_LIST = "kafka-cluster-kafka-0.kafka.svc.cluster.local:9092,kafka-cluster-kafka-1.kafka.svc.cluster.local:9092,kafka-cluster-kafka-2.kafka.svc.cluster.local:9092"
+    GRPC_SERVER_ADDR  = var.grpc_server_addr
+    KAFKA_BROKER_LIST = var.kafka_broker_list
   }
+}
+
+resource "kubernetes_secret" "gitlab_registry_secret" {
+  metadata {
+    name      = "gitlab-registry-secret"
+    namespace = kubernetes_namespace.storm.metadata[0].name
+  }
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "https://registry.gitlab.com" = {
+          username = var.CI_REGISTRY_USER
+          password = var.CI_REGISTRY_PASSWORD
+          email    = var.CI_REGISTRY_EMAIL
+        }
+      }
+    })
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
 }
 
 resource "kubernetes_deployment" "storm_deployment" {
@@ -66,7 +87,7 @@ resource "kubernetes_deployment" "storm_deployment" {
 
         container {
           name  = "storm"
-          image = "gitlab.com/0xAFz/storm:latest"
+          image = var.image_tag
           port {
             container_port = 50051
           }
@@ -88,6 +109,9 @@ resource "kubernetes_deployment" "storm_deployment" {
           security_context {
             run_as_user = 1000
           }
+        }
+        image_pull_secrets {
+          name = kubernetes_secret.gitlab_registry_secret.metadata[0].name
         }
       }
     }
