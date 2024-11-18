@@ -1,6 +1,6 @@
 ---
 - name: Install k3s
-  shell: curl -sfL https://get.k3s.io | sh -
+  shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -s -
 
 - name: Get k3s token
   command: cat /var/lib/rancher/k3s/server/node-token
@@ -30,3 +30,9 @@
     mode: 0640
     create: false
   become: false
+
+- name: Install ingress nginx controller
+  copy:
+    src: files/ingress-nginx.yml
+    dest: /var/lib/rancher/k3s/server/manifests/ingress-nginx.yml
+    create: true
