@@ -12,13 +12,14 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path    = "~/kube/storm/k3s.yaml"
+  config_path    = "~/.kube/storm/config"
   config_context = "default"
 }
 
 provider "helm" {
   kubernetes {
-    config_path = "~/kube/storm/k3s.yaml"
+    config_path = "~/.kube/storm/config"
+    config_context = "default"
   }
 }
 
@@ -37,6 +38,7 @@ resource "helm_release" "strimzi" {
 }
 
 resource "kubernetes_manifest" "kafka_cluster" {
+  depends_on = [ helm_release.strimzi ]
   manifest = {
     "apiVersion" = "kafka.strimzi.io/v1beta2"
     "kind"       = "Kafka"
