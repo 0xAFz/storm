@@ -21,9 +21,9 @@ worker_ips = ips[1:]
 inventory = {
     'all': {
         'children': {
-            'controller': {
+            'master': {
                 'hosts': {
-                    f'controller1': {
+                    f'master1': {
                         'ansible_host': controller_ip,
                         'ansible_user': 'root',
                         'ansible_port': 22,
