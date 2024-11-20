@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path    = "~/kube/storm/k3s.yaml"
+  config_path    = "~/.kube/storm/config"
   config_context = "default"
 }
 
@@ -122,9 +122,6 @@ resource "kubernetes_service" "storm_service" {
   metadata {
     name      = "storm-service"
     namespace = kubernetes_namespace.storm.metadata[0].name
-    annotations = {
-      "traefik.backend.grpc" = "true"
-    }
   }
   spec {
     selector = {
@@ -142,83 +139,104 @@ resource "kubernetes_service" "storm_service" {
   }
 }
 
-resource "kubernetes_manifest" "storm_https_redirect" {
-  manifest = {
-    "apiVersion" = "traefik.containo.us/v1alpha1"
-    "kind"       = "Middleware"
-    "metadata" = {
-      "name"      = "storm-https-redirect"
-      "namespace" = kubernetes_namespace.storm.metadata[0].name
-    }
-    "spec" = {
-      "redirectScheme" = {
-        "scheme"    = "https"
-        "permanent" = true
-      }
+# resource "kubernetes_manifest" "storm_certificate" {
+#   manifest = {
+#     "apiVersion" = "cert-manager.io/v1"
+#     "kind"       = "Certificate"
+#     "metadata" = {
+#       "name"      = "storm-tls"
+#       "namespace" = kubernetes_namespace.storm.metadata[0].name
+#     }
+#     "spec" = {
+#       "secretName"  = "storm-tls"
+#       "duration"    = "2160h0m0s" # 90 days
+#       "renewBefore" = "360h0m0s"  # 15 days
+#       "commonName"  = var.SUBDOMAIN
+#       "dnsNames"    = [var.SUBDOMAIN]
+#       "issuerRef" = {
+#         "name"  = "le-staging"
+#         "kind"  = "ClusterIssuer"
+#         "group" = "cert-manager.io"
+#       }
+#     }
+#   }
+# }
+
+# resource "kubernetes_manifest" "storm_ingressroute" {
+#   manifest = {
+#     "apiVersion" = "traefik.containo.us/v1alpha1"
+#     "kind"       = "IngressRoute"
+#     "metadata" = {
+#       "name"      = "storm-ingress"
+#       "namespace" = kubernetes_namespace.storm.metadata[0].name
+#       annotations = {
+#         "traefik.ingress.kubernetes.io/service.serversscheme" = "h2c"
+#       }
+#     }
+#     "spec" = {
+#       "entryPoints" = ["websecure"]
+#       "routes" = [
+#         {
+#           "match" = "Host(`${var.SUBDOMAIN}`)"
+#           "kind"  = "Rule"
+#           "services" = [
+#             {
+#               "name"           = kubernetes_service.storm_service.metadata[0].name
+#               "namespace"      = kubernetes_namespace.storm.metadata[0].name
+#               "port"           = 8088
+#               "scheme"         = "h2c"
+#               "passHostHeader" = true
+
+#             }
+#           ]
+#           # "middlewares" = [
+#           #   {
+#           #     "name"      = "storm-https-redirect"
+#           #     "namespace" = kubernetes_namespace.storm.metadata[0].name
+#           #   }
+#           # ]
+#         }
+#       ]
+#       "tls" = {
+#         "secretName" = "storm-tls"
+#       }
+#     }
+#   }
+# }
+
+resource "kubernetes_ingress_v1" "storm-ingress" {
+  metadata {
+    name      = "storm-ingress"
+    namespace = kubernetes_namespace.storm.metadata[0].name
+
+    annotations = {
+      "cert-manager.io/cluster-issuer" : "le-staging"
+      "nginx.ingress.kubernetes.io/ssl-redirect" : "false"
+      "nginx.ingress.kubernetes.io/backend-protocol" : "GRPC"
     }
   }
-}
 
-resource "kubernetes_manifest" "storm_certificate" {
-  manifest = {
-    "apiVersion" = "cert-manager.io/v1"
-    "kind"       = "Certificate"
-    "metadata" = {
-      "name"      = "storm-cert"
-      "namespace" = kubernetes_namespace.storm.metadata[0].name
+  spec {
+    ingress_class_name = "nginx"
+    tls {
+      hosts       = [var.SUBDOMAIN]
+      secret_name = "storm-tls"
     }
-    "spec" = {
-      "secretName"  = "storm-tls"
-      "duration"    = "2160h0m0s" # 90 days
-      "renewBefore" = "360h0m0s"  # 15 days
-      "commonName"  = "storm.zirakcloud.ir"
-      "dnsNames"    = ["storm.zirakcloud.ir"]
-      "issuerRef" = {
-        "name"  = "le-staging"
-        "kind"  = "ClusterIssuer"
-        "group" = "cert-manager.io"
-      }
-    }
-  }
-}
-
-resource "kubernetes_manifest" "storm_ingressroute" {
-  manifest = {
-    "apiVersion" = "traefik.containo.us/v1alpha1"
-    "kind"       = "IngressRoute"
-    "metadata" = {
-      "name"      = "storm-ingress"
-      "namespace" = kubernetes_namespace.storm.metadata[0].name
-      "annotations" = {
-        "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
-        "traefik.ingress.kubernetes.io/router.tls"         = "true"
-      }
-    }
-    "spec" = {
-      "entryPoints" = ["websecure"]
-      "routes" = [
-        {
-          "match" = "Host(`storm.zirakcloud.ir`)"
-          "kind"  = "Rule"
-          "services" = [
-            {
-              "name"           = kubernetes_service.storm_service.metadata[0].name
-              "namespace"      = kubernetes_namespace.storm.metadata[0].name
-              "scheme"         = "h2c"
-              "passHostHeader" = true
-              "port"           = 8088
+    rule {
+      host = var.SUBDOMAIN
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service.storm_service.metadata[0].name
+              port {
+                number = 8088
+              }
             }
-          ]
-          "middlewares" = [
-            {
-              "name"      = "storm-https-redirect"
-              "namespace" = kubernetes_namespace.storm.metadata[0].name
-            }
-          ]
+          }
         }
-      ]
-      "tls" = {
-        "secretName" = "storm-tls"
       }
     }
   }
