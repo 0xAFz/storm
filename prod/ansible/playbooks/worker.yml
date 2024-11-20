@@ -1,6 +1,6 @@
 ---
 - hosts: worker
-  name: worker
+  name: Install k3s on worker nodes
   become: yes
   gather_facts: yes
   roles: 
