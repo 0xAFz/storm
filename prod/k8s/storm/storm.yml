@@ -66,35 +66,29 @@ spec:
       targetPort: 50051
   type: ClusterIP
 ---
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    cert-manager.io/cluster-issuer: "le-prod"
   name: storm-ingress
   namespace: storm
 spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`storm.zirakcloud.ir`)
-      kind: Rule
-      services:
-        - name: storm-service
-          namespace: storm
-          scheme: h2c
-          passHostHeader: true
-          port: 8088
-      middlewares:
-        - name: grpc-redirect
+  ingressClassName: nginx
+  rules:
+  - host: "storm.domain.tld"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: storm-service
+            port:
+              number: 8088
   tls:
-    certResolver: "le-staging"
-    secretName: storm-tls
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: storm-https-redirect
-  namespace: storm
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true
+    - secretName: storm-tls 
+      hosts:
+        - "storm.domain.tld"
