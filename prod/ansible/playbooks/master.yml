@@ -1,0 +1,10 @@
+---
+- hosts: master
+  name: Install k3s on master node
+  become: yes
+  gather_facts: yes
+  roles: 
+    - role: ../roles/packages
+      tags: packages
+    - role: ../roles/master
+      tags: master
