@@ -7,7 +7,7 @@ services:
     volumes:
       - "kafka_data:/bitnami"
     environment:
-      - KAFKA_ENABLE_KRAT=yes
+      - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_CFG_NODE_ID=0
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
