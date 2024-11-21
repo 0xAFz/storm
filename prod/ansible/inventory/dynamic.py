@@ -20,7 +20,6 @@ worker_ips = ips[1:]
 
 inventory = {
     'all': {
-        'children': {
             'master': {
                 'hosts': {
                     f'master1': {
@@ -33,12 +32,11 @@ inventory = {
             'worker': {
                 'hosts': {}
             }
-        }
     }
 }
 
 for i, ip in enumerate(worker_ips, 1):
-    inventory['all']['children']['worker']['hosts'][f'worker{i}'] = {
+    inventory['all']['worker']['hosts'][f'worker{i}'] = {
         'ansible_host': ip,
         'ansible_user': 'root',
         'ansible_port': 22,
