@@ -22,7 +22,7 @@ This service is designed to be lightweight, scalable, and production-ready, util
 
 ---
 
-## **1. Prerequisites**
+## **Prerequisites**
 
 ### **Tools and Versions**
 To run or deploy the project, ensure you have the following installed:
@@ -45,7 +45,7 @@ To run or deploy the project, ensure you have the following installed:
 
 ---
 
-## **2. Running Locally**
+## **Running Locally**
 
 ### **Steps to Get Started**
 
@@ -88,7 +88,7 @@ To run or deploy the project, ensure you have the following installed:
 
 ---
 
-## **3. Project Architecture**
+## **Project Architecture**
 
 ### **Logical Architecture**
 
@@ -106,7 +106,7 @@ To run or deploy the project, ensure you have the following installed:
 
 ---
 
-## **4. Production Deployment**
+## **Production Deployment**
 
 Production deployment supports **two approaches**: **fully automated** or **manual with automation**.
 
