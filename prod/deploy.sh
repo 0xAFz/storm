@@ -1,8 +1,11 @@
 #!/bin/bash
 
+set -euo pipefail
+
 cd $(dirname "$0") || exit 1
 
-source ./.env.prod
+source ./.env
+source ./terraform/services/storm/.env
 
 activate_venv() {
     if [ ! -d ".venv" ]; then
@@ -15,32 +18,53 @@ activate_venv() {
 }
 
 check_ping() {
-    ansible all -i ansible/inventory/hosts.yml -m ping --timeout 1
-}
-
-cluster_up() {
-    terraform -chdir=terraform/cluster init && \
-    terraform -chdir=terraform/cluster plan && \
-    terraform -chdir=terraform/cluster apply -auto-approve
-
-    python3 ansible/inventory/dynamic.py
-
-    if [ "$?" -ne 0 ]; then
-        echo "dynamic.py failed to generate hosts.yml file. Exiting..."
-        exit 1
-    fi
-
-    until check_ping; do
+    until ansible all -i ansible/inventory/hosts.yml -m ping --timeout 1; do
         echo "Waiting for VM's to become reachable..."
         sleep 1
     done
+}
 
+setup_cluster() {
     ansible-playbook -i ansible/inventory/hosts.yml ansible/playbooks/cluster.yml
 }
 
-cluster_down() {
-    terraform -chdir=terraform/cluster destroy -auto-approve
+deploy_resource() {
+    local service_dir="terraform/$1"
+
+    if [ ! -d "$service_dir" ]; then
+        echo "Directory $service_dir does not exist!" >&2
+        exit 1
+    fi
+
+    terraform -chdir="$service_dir" init
+    terraform -chdir="$service_dir" plan
+    terraform -chdir="$service_dir" apply -auto-approve
 }
+
+cluster_up() {
+    deploy_resource cluster || { echo "Terraform failed to create vm's on OpenStack. Exiting..."; exit 1; }
+
+    python3 ansible/inventory/dynamic.py || { echo "dynamic.py failed to generate hosts.yml file. Exiting..."; exit 1; }
+
+    python3 dns.py || { echo "dns.py failed to create DNS records. Exiting..."; exit 1; }
+
+    setup_cluster || { echo "Ansible failed to setup Kubernetes cluster. Exiting..."; exit 1; }
+
+    deploy_resource services/kafka || { echo "Terraform failed to deploy kafka on kubernetes. Exiting..."; exit 1; }
+    deploy_resource services/storm || { echo "Terraform failed to deploy storm on kubernetes. Exiting..."; exit 1; }
+}
+
+cluster_down() {
+    terraform -chdir=terraform/cluster destroy -auto-approve || {
+        echo "Failed to destroy the cluster. Check terraform logs."
+        exit 1
+    }
+}
+
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <action>. Use 'up' or 'down'"
+    exit 1
+fi
 
 case "$1" in
     up)
