@@ -66,8 +66,8 @@ def main():
 
     ips = []
     try:
-        for host in inventory['all']['master']['hosts']:
-            ips.append(inventory['all']['master']['hosts'][host]['ansible_host'])
+        for host in inventory['all']['children']['master']['hosts']:
+            ips.append(inventory['all']['children']['master']['hosts'][host]['ansible_host'])
     except Exception as e:
         print(e)
         sys.exit(1)
