@@ -1,10 +1,10 @@
 ---
-- name: Fetch k3s token from controller
+- name: Fetch k3s token from master node
   fetch:
     src: /tmp/k3s_token.txt
     dest: /tmp/k3s_token.txt
     flat: yes
-  delegate_to: controller1
+  delegate_to: master1
 
 - name: Install k3s on worker node
-  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['controller1'].ansible_host }}:6443 K3S_TOKEN={{ lookup('file', '/tmp/k3s_token.txt') }} sh -"
+  shell: "curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars['master1'].ansible_host }}:6443 K3S_TOKEN={{ lookup('file', '/tmp/k3s_token.txt') }} sh -"
