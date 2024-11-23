@@ -14,6 +14,9 @@ import (
 	statusv1 "github.com/0xAFz/storm/protobuf/status/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+
 	"google.golang.org/grpc/reflection"
 )
 
@@ -36,6 +39,11 @@ func Serve() {
 	statusv1.RegisterStatusServer(server, grpcStatusServer)
 
 	reflection.Register(server)
+
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(server, healthServer)
+
+	healthServer.SetServingStatus("storm", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	listen, err := net.Listen("tcp", config.AppConfig.GrpcServerAddr)
 	if err != nil {
