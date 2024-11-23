@@ -104,7 +104,7 @@ resource "kubernetes_secret" "gitlab_registry_secret" {
 }
 
 resource "kubernetes_deployment" "storm_deployment" {
-  depends_on = [ kubernetes_manifest.kafka_cluster ]
+  depends_on = [kubernetes_manifest.kafka_cluster]
   metadata {
     name      = "storm"
     namespace = kubernetes_namespace.storm.metadata[0].name
@@ -161,6 +161,21 @@ resource "kubernetes_deployment" "storm_deployment" {
           }
           security_context {
             run_as_user = 1000
+          }
+
+          liveness_probe {
+            grpc {
+              port = 50051
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
+          }
+          readiness_probe {
+            grpc {
+              port = 50051
+            }
+            initial_delay_seconds = 5
+            period_seconds        = 10
           }
         }
         image_pull_secrets {
