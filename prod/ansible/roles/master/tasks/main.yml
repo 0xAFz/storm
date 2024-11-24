@@ -37,18 +37,24 @@
 - name: Install cert manager
   shell: kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.1/cert-manager.yaml
 
+- name: Wait for cert-manager pods to be ready
+  shell: kubectl -n cert-manager wait --for=condition=ready pod --all --timeout=120s
+  retries: 5
+  delay: 10
+  ignore_errors: true
+  
 - name: Move cert manager staging to master
   template:
     src: templates/certmanager/staging-certmanager.yml.j2
     dest: /tmp/staging-certmanager.yml
 
-- name: Apply cert manager staging
-  shell: kubectl apply -f /tmp/staging-certmanager.yml
-
 - name: Move cert manager prod to master
   template:
     src: templates/certmanager/prod-certmanager.yml.j2
     dest: /tmp/prod-certmanager.yml
+
+- name: Apply cert manager staging
+  shell: kubectl apply -f /tmp/staging-certmanager.yml
 
 - name: Apply cert manager prod
   shell: kubectl apply -f /tmp/prod-certmanager.yml
