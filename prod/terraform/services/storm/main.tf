@@ -116,7 +116,17 @@ resource "kubernetes_deployment" "storm_deployment" {
   }
 
   spec {
-    replicas = 3
+    replicas                  = 3
+    progress_deadline_seconds = 600
+    min_ready_seconds         = 5
+    revision_history_limit    = 5
+    strategy {
+      type = "RollingUpdate"
+      rolling_update {
+        max_surge       = "25%"
+        max_unavailable = 1
+      }
+    }
     selector {
       match_labels = {
         "app.kubernetes.io/name"    = "storm"
@@ -304,6 +314,42 @@ resource "kubernetes_ingress_v1" "storm-ingress" {
               }
             }
           }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_horizontal_pod_autoscaler" "storm_hpa" {
+  metadata {
+    name      = "storm-hpa"
+    namespace = kubernetes_namespace.storm.metadata[0].name
+  }
+  spec {
+    min_replicas = 3
+    max_replicas = 20
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind        = "Deployment"
+      name        = kubernetes_deployment.storm_deployment.metadata[0].name
+    }
+    metric {
+      type = "Resource"
+      resource {
+        name = "cpu"
+        target {
+          type                = "Utilization"
+          average_utilization = 80
+        }
+      }
+    }
+    metric {
+      type = "Resource"
+      resource {
+        name = "memory"
+        target {
+          type                = "Utilization"
+          average_utilization = 80
         }
       }
     }

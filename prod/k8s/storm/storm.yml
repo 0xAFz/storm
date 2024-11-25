@@ -19,6 +19,14 @@ metadata:
     app.kubernetes.io/env: prod
 spec:
   replicas: 3
+  progressDeadlineSeconds: 600
+  minReadySeconds: 5
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: storm
@@ -102,3 +110,53 @@ spec:
     - secretName: storm-tls 
       hosts:
         - "storm.domain.tld"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storm-hpa
+  namespace: storm
+spec:
+  minReplicas: 3
+  maxReplicas: 20
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storm
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+# ---
+# apiVersion: "autoscaling.k8s.io/v1"
+# kind: VerticalPodAutoscaler
+# metadata:
+#   name: storm-vpa
+#   namespace: storm
+# spec:
+#   targetRef:
+#     apiVersion: "apps/v1"
+#     kind: Deployment
+#     name: storm
+#   updatePolicy:
+#     updateMode: Auto
+#   resourcePolicy:
+#     containerPolicies:
+#       - containerName: '*'
+#         minAllowed:
+#           cpu: 100m
+#           memory: 50Mi
+#         maxAllowed:
+#           cpu: 1
+#           memory: 1G
+#         controlledResources: ["cpu", "memory"]
+#         controlledValues: RequestsAndLimits
