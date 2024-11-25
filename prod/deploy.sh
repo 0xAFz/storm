@@ -48,6 +48,8 @@ cluster_up() {
 
     python3 dns.py || { echo "dns.py failed to create DNS records. Exiting..."; exit 1; }
 
+	check_ping
+
     setup_cluster || { echo "Ansible failed to setup Kubernetes cluster. Exiting..."; exit 1; }
 
     deploy_resource services/kafka || { echo "Terraform failed to deploy kafka on kubernetes. Exiting..."; exit 1; }
