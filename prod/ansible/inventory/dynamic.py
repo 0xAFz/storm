@@ -4,7 +4,7 @@ import yaml
 import subprocess
 
 terraform_dir = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "..", "..", "terraform", "cluster"
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "terraform", "compute"
 )
 
 terraform_output = subprocess.check_output(
