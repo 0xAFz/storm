@@ -1,31 +1,47 @@
-image: docker:latest
-
-services:
-  - docker:dind
+default:
+  image: docker:27.1.1
+  services:
+    - docker:27.1.1-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
 
 stages:
   - build
-  # - test
+  - test
+  - release
+  - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  CONTAINER_TEST_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  CONTAINER_RELEASE_IMAGE: $CI_REGISTRY_IMAGE:latest
 
-build-docker:
+build:
   stage: build
   script:
-    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-    - docker build -t $IMAGE_TAG .
-    - docker images
-    - docker push $IMAGE_TAG
-  only:
-    - main
+    - docker build --pull -t $CONTAINER_TEST_IMAGE .
+    - docker push $CONTAINER_TEST_IMAGE
 
-# test-docker:
-#   stage: test
-#   needs:
-#     - build-docker
-#   script:
-#     - docker run --rm $IMAGE_TAG go test ./...
-#   only:
-#     - main
+test1:
+  stage: test
+  script:
+    - docker images
+
+release-image:
+  stage: release
+  script:
+    - docker pull $CONTAINER_TEST_IMAGE
+    - docker tag $CONTAINER_TEST_IMAGE $CONTAINER_RELEASE_IMAGE
+    - docker push $CONTAINER_RELEASE_IMAGE
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy Stage"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  environment: production
