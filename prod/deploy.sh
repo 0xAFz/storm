@@ -5,7 +5,6 @@ set -euo pipefail
 cd $(dirname "$0") || exit 1
 
 source ./.env
-source ./terraform/services/storm/.env
 
 activate_venv() {
     if [ ! -d ".venv" ]; then
@@ -28,21 +27,8 @@ setup_cluster() {
     ansible-playbook -i ansible/inventory/hosts.yml ansible/playbooks/cluster.yml
 }
 
-deploy_resource() {
-    local service_dir="terraform/$1"
-
-    if [ ! -d "$service_dir" ]; then
-        echo "Directory $service_dir does not exist!" >&2
-        exit 1
-    fi
-
-    terraform -chdir="$service_dir" init
-    terraform -chdir="$service_dir" plan
-    terraform -chdir="$service_dir" apply -auto-approve
-}
-
-cluster_up() {
-    deploy_resource cluster || { echo "Terraform failed to create vm's on OpenStack. Exiting..."; exit 1; }
+up() {
+    terraform/tf.sh apply compute || { echo "Terraform failed to create vm's on OpenStack. Exiting..."; exit 1; }
 
     python3 ansible/inventory/dynamic.py || { echo "dynamic.py failed to generate hosts.yml file. Exiting..."; exit 1; }
 
@@ -52,12 +38,12 @@ cluster_up() {
 
     setup_cluster || { echo "Ansible failed to setup Kubernetes cluster. Exiting..."; exit 1; }
 
-    deploy_resource services/kafka || { echo "Terraform failed to deploy kafka on kubernetes. Exiting..."; exit 1; }
-    deploy_resource services/storm || { echo "Terraform failed to deploy storm on kubernetes. Exiting..."; exit 1; }
+    terraform/tf.sh apply kafka || { echo "Terraform failed to deploy kafka on kubernetes. Exiting..."; exit 1; }
+    terraform/tf.sh apply storm || { echo "Terraform failed to deploy storm on kubernetes. Exiting..."; exit 1; }
 }
 
-cluster_down() {
-    terraform -chdir=terraform/cluster destroy -auto-approve || {
+down() {
+    terraform/tf.sh destroy compute || {
         echo "Failed to destroy the cluster. Check terraform logs."
         exit 1
     }
@@ -71,10 +57,10 @@ fi
 case "$1" in
     up)
         activate_venv
-        cluster_up
+        up
         ;;
     down)
-        cluster_down
+        down
         ;;
     *)
         echo "Action not found. Use 'up' or 'down'."
