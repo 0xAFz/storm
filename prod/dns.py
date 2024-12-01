@@ -16,7 +16,7 @@ def load_env():
             "DOMAIN": get_env("DOMAIN"),
             "SUBDOMAIN": get_env("SUBDOMAIN"),
             "CLOUDFLARE_EMAIL": get_env("CLOUDFLARE_EMAIL"),
-            "CLOUDFLARE_API_TOKEN": get_env("CLOUDFLARE_API_TOKEN"),
+            "CLOUDFLARE_API_KEY": get_env("CLOUDFLARE_API_KEY"),
             "ZONE_ID": get_env("ZONE_ID"),
             }
 
@@ -89,8 +89,8 @@ if __name__ == "__main__":
     config = load_env()
 
     cf = Cloudflare(
-        api_token=config.get("CLOUDFLARE_API_TOKEN"),
         api_email=config.get("CLOUDFLARE_EMAIL"),
+        api_key=config.get("CLOUDFLARE_API_KEY"),
     )
 
     main()
