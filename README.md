@@ -1,7 +1,5 @@
 # Storm
 
-### **Project Overview**
-
 **Storm** is a **microservice** for managing user status updates using an **event-driven** architecture. The service is built with **Go** and utilizes **gRPC** for interface communication and **Kafka** for event streaming.
 
 This service is designed to be lightweight, scalable, and production-ready, utilizing **Kubernetes** as its orchestration layer. This documentation includes:
@@ -127,8 +125,11 @@ This approach automates everything from VM provisioning to Kubernetes resource d
    cp .env.example .env
    vim .env
 
-   cp terraform/services/storm/.env.example terraform/services/storm/.env
-   vim terraform/services/storm/.env
+   cp terraform/compute/.env.example terraform/compute/.env
+   vim terraform/compute/.env
+
+   cp terraform/storm/.env.example terraform/storm/.env
+   vim terraform/storm/.env
    ```
 
    Update the values for:
@@ -217,13 +218,13 @@ This approach allows more flexibility and supports different cloud providers.
    ### **Deploying with Terraform**
    1. **Deploy Kafka**:
       ```bash
-         terraform chdir=terraform/services/kafka init
-         terraform chdir=terraform/services/kafka apply
+         terraform chdir=terraform/kafka init
+         terraform chdir=terraform/kafka apply
       ```
    2. **Deploy Storm Microservice**
       ```bash
-         terraform chdir=terraform/services/storm init
-         terraform chdir=terraform/services/storm apply
+         terraform chdir=terraform/storm init
+         terraform chdir=terraform/storm apply
       ```
 ---
 
@@ -243,7 +244,7 @@ This approach allows more flexibility and supports different cloud providers.
 3. **Test Service Endpoints**:
    - List gRPC methods:
      ```bash
-     grpcurl storm.domain.tld list
+     grpcurl storm.domain.tld:443 list
      ```
    - Send a request:
      ```bash
